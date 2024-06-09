@@ -2,13 +2,13 @@ import streamlit as st
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_bytes
 import pandas as pd
-from io import StringIO
+import os
 def read_pdf(file):
     text = extract_text(file)
     return text
 
 def convert_pdf_to_images(pdf_data):
-    poppler_path=r"C:\Users\Dell\Downloads\Release-24.02.0-0\poppler-24.02.0\Library\bin"
+    poppler_path=os.getenv("POPPLER_PATH")
     images = convert_from_bytes(pdf_data, size=(500, None),poppler_path=poppler_path)
     return images
 
