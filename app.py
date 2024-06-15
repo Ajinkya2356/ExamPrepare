@@ -1,8 +1,8 @@
 import streamlit as st
+import fitz  # PyMuPDF
 from PIL import Image
-from io import BytesIO
-import pdf2image
-from pypdf import PdfReader
+import io
+from PyPDF2 import PdfReader
 
 
 def extract_text_from_pdf(pdf_file_path):
@@ -13,38 +13,28 @@ def extract_text_from_pdf(pdf_file_path):
     return text
 
 
-def convert_pdf_to_images(pdf_data):
-    images = pdf2image.convert_from_bytes(pdf_data)
-    return images
-
-
-def show_preview_image(images, page_no):
-    st.image(images[page_no], use_column_width=True)
-
-
 def main():
-    st.title("PDF Previewer")
-    uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
+    st.title("PDF Viewer")
+
+    uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
+
     if uploaded_file is not None:
-        if st.session_state.get("file_just_uploaded", True):
-            st.toast("PDF uploaded successfully !")
-            st.session_state.file_just_uploaded = False
-        pdf_data = uploaded_file.read()
-        st.session_state.page_no = st.session_state.get("page_no", 0)
-        images = convert_pdf_to_images(pdf_data)
-        text = extract_text_from_pdf(uploaded_file)
+
         col1, col2 = st.columns(2)
         with col1:
-            st.write("Preview of PDF:")
-            st.number_input(
-                "Page No",
-                min_value=0,
-                max_value=len(images) - 1,
-                value=st.session_state.page_no,
-                key="page_no",
+            st.write("PDF preview")
+            pdf_document = fitz.open("pdf", uploaded_file.read())
+            num_pages = pdf_document.page_count
+
+            page_number = st.number_input(
+                "Enter page number", min_value=1, max_value=num_pages, value=1
             )
-            show_preview_image(images, st.session_state.page_no)
+            page = pdf_document.load_page(page_number - 1)
+            pix = page.get_pixmap()
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            st.image(img, use_column_width=True)
         with col2:
+            text = extract_text_from_pdf(uploaded_file)
             st.write("Text extracted from PDF:")
             st.text_area("", text, height=500)
 
